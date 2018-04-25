@@ -1,0 +1,43 @@
+import numba as nb
+import numpy as np
+
+spec = [
+    ('n_classifiers', nb.uint16),
+    ('extra_trees', nb.boolean)
+]
+
+@nb.jitclass(spec)
+class AdaBoostClassifier:
+    
+    def __init__(self, n_classifiers=50, extra_trees=False):
+        self.n_classifiers = n_classifiers
+        self.extra_trees = extra_trees
+    
+    # X must be a numpy array where each row is a datapoint
+    def fit(self, X, Y):
+        X_IDs = np.array([i for i in range(X.shape[0])])
+        X_Weights = np.array([1 / X.shape[0] for i in range(X.shape[0])])
+
+        X = np.c_[X_IDs, X]
+
+        best_classifiers = []
+
+        for i in range(n_classifiers):
+            stump_classifier = DecisionTreeStump(extra_trees)
+    
+        
+    def predict(self, X):
+        pass
+
+
+class DecisionTreeStump:
+
+    def __init__(self, extra_trees=False):
+        self.extra_trees = extra_trees
+
+    def fit(self, X, X_Weights, Y)
+        pass
+
+    def predict(self, X)
+        pass
+    
