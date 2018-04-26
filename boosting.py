@@ -7,12 +7,14 @@ spec1 = [
     ('classifiers', nb.Array)
 ]
 
-@nb.jitclass(spec1)
+# @nb.jitclass(spec1)
 class AdaBoostClassifier:
     
     def __init__(self, n_classifiers=50, extra_trees=False):
         self.n_classifiers = n_classifiers
         self.extra_trees = extra_trees
+        self.classifiers = []
+        self.classifier_w = []
     
     # X must be a numpy array where each row is a datapoint
     def fit(self, X, Y):
@@ -27,7 +29,15 @@ class AdaBoostClassifier:
             stump_classifier = DecisionTreeStump(extra_trees)
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
+            self.classifiers.append(stump_classifier)
+            self.classifier_w.append(self.compute_alpha(stump_classifier.total_error))
+            
+            # TODO compute new X_Weights
 
+
+    @staticmethod
+    def compute_alpha(err):
+        return np.log((1 - err) / err) / 2
 
     def predict(self, X):
         pass
