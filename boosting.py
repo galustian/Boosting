@@ -28,6 +28,11 @@ class AdaBoostClassifier:
             stump_classifier = DecisionTreeStump(extra_trees)
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
+            # if total_error of classifier is close to 1/2, it is stuck in an infinite loop
+            # (alphas are 0 and weights don't update anymore)
+            if abs(stump_classifier.total_error - 1/2) < 1e-3:
+                break
+
             alpha = self.compute_alpha(stump_classifier.total_error)
             self.classifiers.append(stump_classifier)
             self.classifier_alpha.append(alpha)
