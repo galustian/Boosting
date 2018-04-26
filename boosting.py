@@ -36,7 +36,7 @@ spec2 = [
     ('error', nb.float32),
 ]
 
-# @nb.jitclass(spec2)
+@nb.jitclass(spec2)
 class DecisionTreeStump:
 
     def __init__(self, extra_trees=False):
@@ -63,14 +63,14 @@ class DecisionTreeStump:
                 # sum up all weights for misclassified samples
                 error = 0.0
                 for x_i in stump_left[:, 0]:
-                    x_i = int(x_i)
-                    if Y[x_i] != 0:
-                        error += X_Weights[x_i]
+                    x_ii = int(x_i)
+                    if Y[x_ii] != 0:
+                        error += X_Weights[x_ii]
                 
                 for x_i in stump_right[:, 0]:
-                    x_i = int(x_i)
-                    if Y[x_i] != 1:
-                        error += X_Weights[x_i]
+                    x_ii = int(x_i)
+                    if Y[x_ii] != 1:
+                        error += X_Weights[x_ii]
 
                 if abs(error - 1/2) > furthest_from_half_error:
                     furthest_from_half_error = abs(error - 1/2)
