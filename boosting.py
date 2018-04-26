@@ -15,7 +15,7 @@ class AdaBoostClassifier:
     
     # X must be a numpy array where each row is a datapoint
     def fit(self, X, Y):
-        X_IDs = np.array([i for i in range(X.shape[0])])
+        X_IDs = np.array([i for i in range(X.shape[0])], dtype=np.int64)
         X_Weights = np.array([1 / X.shape[0] for i in range(X.shape[0])])
 
         X = np.c_[X_IDs, X]
@@ -30,46 +30,59 @@ class AdaBoostClassifier:
         pass
 
 spec2 = [
-    ('extra_trees', nb.boolean)
+    ('extra_trees', nb.boolean),
+    ('feat_i', nb.uint32),
+    ('feat_size', nb.float32),
+    ('error', nb.float32)
 ]
 
-@nb.jitclass()
+#@nb.jitclass(spec2)
 class DecisionTreeStump:
 
     def __init__(self, extra_trees=False):
         self.extra_trees = extra_trees
 
     # Compute the best classifier
-    def fit(self, X, X_Weights, Y)
-        n_feat = X.shape[1]
+    def fit(self, X, Y, X_Weights):
+        n_feat = X.shape[1]-1
 
         best_feat_i = 0
         best_feat_size = 0.0  # smaller than feat_size (on the left side): zeros, on the right: ones
-        best_error = 0.0
+        furthest_from_half_error = 0.0      # absolute distance from 1/2 (close to 0 => bad, close to 1/2 => good!)
         
+        # TODO use nb.prange
         # TODO (maybe): make algorithm more efficient
-        for feat_i in range(n_feat):
+        for feat_i in range(1, n_feat):
             # Compute Error for each possible tree => choose best stump
             for n in range(X.shape[0]):
                 n_feat_val = X[n, feat_i]
                 
                 # err_right = 1 - err_left
                 stump_left = X[X[:, feat_i] < n_feat_val]
+                stump_right = X[X[:, feat_i] >= n_feat_val]
                 
                 # sum up all weights for misclassified samples
                 error = 0.0
-                for x_i in range(stump_left.shape[0]):
+                for x_i in stump_left[:, 0]:
+                    x_i = int(x_i)
                     if Y[x_i] != 0:
                         error += X_Weights[x_i]
+                
+                for x_i in stump_right[:, 0]:
+                    x_i = int(x_i)
+                    if Y[x_i] != 1:
+                        error += X_Weights[x_i]
 
-                if error < best_error:
-                    best_error = error
+                if abs(error - 1/2) > furthest_from_half_error:
+                    furthest_from_half_error = abs(error - 1/2)
                     best_feat_i = feat_i
                     best_feat_size = n_feat_val
         
-        
+        self.feat_i = best_feat_i
+        self.feat_size = best_feat_size
+        self.error = furthest_from_half_error
 
 
-    def predict(self, X)
+    def predict(self, X):
         pass
     
