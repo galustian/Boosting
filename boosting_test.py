@@ -19,7 +19,7 @@ def test_decisiontree_stump():
 
     assert stump.feat_i == 1
     assert np.around(stump.feat_size, 2) == 3.44
-    assert stump.error == 0.5
+    assert stump.abs_error == 0.5
 
     X = np.array([
         [0, 1.2, 8, 45],
@@ -35,4 +35,4 @@ def test_decisiontree_stump():
 
     assert stump.feat_i == 2
     assert np.around(stump.feat_size, 0) == 6
-    assert np.around(stump.error, 1) == abs(1 / X.shape[0] - 1/2)
+    assert np.around(stump.abs_error, 1) == abs(1 / X.shape[0] - 1/2)

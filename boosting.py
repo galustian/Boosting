@@ -6,7 +6,7 @@ spec1 = [
     ('extra_trees', nb.boolean),
 ]
 
-# @nb.jitclass(spec1)
+@nb.jitclass(spec1)
 class AdaBoostClassifier:
     
     def __init__(self, n_classifiers=50, extra_trees=False):
@@ -24,6 +24,8 @@ class AdaBoostClassifier:
 
         for i in range(n_classifiers):
             stump_classifier = DecisionTreeStump(extra_trees)
+            stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
+
 
 
     def predict(self, X):
@@ -33,7 +35,8 @@ spec2 = [
     ('extra_trees', nb.boolean),
     ('feat_i', nb.uint32),
     ('feat_size', nb.float32),
-    ('error', nb.float32),
+    ('abs_error', nb.float32),
+    ('total_error', nb.float32),
 ]
 
 @nb.jitclass(spec2)
@@ -47,8 +50,9 @@ class DecisionTreeStump:
         n_feat = X.shape[1]-1
 
         best_feat_i = 0
-        best_feat_size = 0.0  # smaller than feat_size (on the left side): zeros, on the right: ones
+        best_feat_size = 0.0  # smaller than feat_size (left side): zeros, on the right: ones
         furthest_from_half_error = 0.0      # absolute distance from 1/2 (close to 0 => bad, close to 1/2 => good!)
+        total_error = 0.0 # needed for computing alpha
         
         # TODO use nb.prange
         # TODO (maybe): make algorithm more efficient
@@ -76,11 +80,12 @@ class DecisionTreeStump:
                     furthest_from_half_error = abs(error - 1/2)
                     best_feat_i = feat_i
                     best_feat_size = n_feat_val
+                    total_error = error
         
         self.feat_i = best_feat_i
         self.feat_size = best_feat_size
-        self.error = furthest_from_half_error
-
+        self.abs_error = furthest_from_half_error # TODO: remove
+        self.total_error = total_error
 
     def predict(self, X):
         pass
