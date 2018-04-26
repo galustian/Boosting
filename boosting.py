@@ -1,21 +1,20 @@
 import numba as nb
 import numpy as np
 
-spec1 = [
-    ('n_classifiers', nb.uint16),
-    ('extra_trees', nb.boolean),
-]
-
-@nb.jitclass(spec1)
+#spec1 = [
+#    ('n_classifiers', nb.uint16),
+#    ('extra_trees', nb.boolean),
+#    ('classifier_alpha', nb.float32[:]),
+#    #('classifiers', nb.)
+#]
+# @nb.jitclass(spec1)
 class AdaBoostClassifier:
     
     def __init__(self, n_classifiers=50, extra_trees=False):
         self.n_classifiers = n_classifiers
         self.extra_trees = extra_trees
-        self.classifiers = [DecisionTreeStump()]
-        self.classifier_alpha = [0.0]
-        self.classifier_alpha.pop()
-        self.classifiers.pop()
+        self.classifier_alpha = []
+        self.classifiers = []
     
     # X must be a numpy array where each row is a datapoint
     def fit(self, X, Y):
@@ -33,9 +32,9 @@ class AdaBoostClassifier:
             if abs(stump_classifier.total_error - 1/2) < 1e-3:
                 break
 
-            # TODO if error-rate of whole boosting classifier is 0: break
+            # TODO if predicted error-rate of whole boosting classifier is 0: break
 
-            alpha = self.compute_alpha(stump_classifier.total_error)
+            alpha = compute_alpha(stump_classifier.total_error)
             self.classifiers.append(stump_classifier)
             self.classifier_alpha.append(alpha)
             
@@ -45,19 +44,21 @@ class AdaBoostClassifier:
     def predict(self, X):
         pass
 
-    # ----------------------------------------- HELPERS -----------------------------------------
+# ----------------------------------------- HELPERS -----------------------------------------
 
-    def update_weights(self, X_Weights, classifier):
-        for x_i in range(len(X_Weights)):
-            if x_i in classifier.wrong_idx:
-                X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / classifier.total_error)
-            else:
-                X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / (1 - classifier.total_error))
-        
-        return X_Weights
+@nb.njit
+def update_weights(X_Weights, classifier):
+    for x_i in range(len(X_Weights)):
+        if x_i in classifier.wrong_idx:
+            X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / classifier.total_error)
+        else:
+            X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / (1 - classifier.total_error))
+    
+    return X_Weights
 
-    def compute_alpha(self, err):
-        return np.log((1 - err) / err) / 2
+@nb.njit
+def compute_alpha(err):
+    return np.log((1 - err) / err) / 2
 
 
 spec2 = [

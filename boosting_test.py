@@ -1,6 +1,9 @@
 import numpy as np
+from boosting import AdaBoostClassifier, DecisionTreeStump
 
-from boosting import DecisionTreeStump
+
+def test_adaboost_classifier():
+    clf = AdaBoostClassifier(50, False)
 
 
 def test_decisiontree_stump_fit():
