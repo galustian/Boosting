@@ -4,6 +4,7 @@ import numpy as np
 spec1 = [
     ('n_classifiers', nb.uint16),
     ('extra_trees', nb.boolean),
+    ('classifiers', nb.Array)
 ]
 
 @nb.jitclass(spec1)
