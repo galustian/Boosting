@@ -13,7 +13,7 @@ class AdaBoostClassifier:
         self.n_classifiers = n_classifiers
         self.extra_trees = extra_trees
         self.classifiers = []
-        self.classifier_w = []
+        self.classifier_alpha = []
     
     # X must be a numpy array where each row is a datapoint
     def fit(self, X, Y):
@@ -28,11 +28,22 @@ class AdaBoostClassifier:
             stump_classifier = DecisionTreeStump(extra_trees)
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
+            alpha = self.compute_alpha(stump_classifier.total_error)
             self.classifiers.append(stump_classifier)
-            self.classifier_w.append(self.compute_alpha(stump_classifier.total_error))
+            self.classifier_alpha.append(alpha)
             
-            # TODO compute new X_Weights
+            X_Weights = update_weights(X_Weights, stump_classifier)
+            
 
+    @staticmethod
+    def update_weights(X_Weights, classifier):
+        for x_i in range(len(X_Weights)):
+            if x_i in classifier.wrong_idx:
+                X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / classifier.total_error)
+            else:
+                X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / (1 - classifier.total_error))
+        
+        return X_Weights
 
     @staticmethod
     def compute_alpha(err):
@@ -97,10 +108,11 @@ class DecisionTreeStump:
 
                 if abs(error - 1/2) > furthest_from_half_error:
                     furthest_from_half_error = abs(error - 1/2)
-                    best_feat_i = feat_i
-                    best_feat_size = n_feat_val
                     total_error = error
                     wrong_idx = temp_wrong_idx
+                    
+                    best_feat_i = feat_i
+                    best_feat_size = n_feat_val
         
         self.feat_i = best_feat_i
         self.feat_size = best_feat_size
