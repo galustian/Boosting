@@ -11,7 +11,7 @@ def test_decisiontree_stump():
         [3, 2.18, 6.1, 129],
         [4, 2.18, 5, 19],
     ])
-    Y = np.array([0, 0, 1, 1, 1])
+    Y = np.array([0, 0, 1, 1, 1], dtype=np.int)
     
     X_Weights = np.array([1 / X.shape[0] for i in range(X.shape[0])])
 
@@ -28,7 +28,7 @@ def test_decisiontree_stump():
         [3, 2.20, 5, 129],
         [4, 1.35, 15, 19],
     ])
-    Y = np.array([0, 0, 0, 1, 1])
+    Y = np.array([0, 0, 0, 1, 1], dtype=np.int)
 
     stump = DecisionTreeStump(extra_trees=False)
     stump.fit(X, Y, X_Weights)

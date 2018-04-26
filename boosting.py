@@ -3,10 +3,10 @@ import numpy as np
 
 spec1 = [
     ('n_classifiers', nb.uint16),
-    ('extra_trees', nb.boolean)
+    ('extra_trees', nb.boolean),
 ]
 
-@nb.jitclass(spec1)
+# @nb.jitclass(spec1)
 class AdaBoostClassifier:
     
     def __init__(self, n_classifiers=50, extra_trees=False):
@@ -15,7 +15,7 @@ class AdaBoostClassifier:
     
     # X must be a numpy array where each row is a datapoint
     def fit(self, X, Y):
-        X_IDs = np.array([i for i in range(X.shape[0])], dtype=np.int64)
+        X_IDs = np.arange(0, X.shape[0])
         X_Weights = np.array([1 / X.shape[0] for i in range(X.shape[0])])
 
         X = np.c_[X_IDs, X]
@@ -33,10 +33,10 @@ spec2 = [
     ('extra_trees', nb.boolean),
     ('feat_i', nb.uint32),
     ('feat_size', nb.float32),
-    ('error', nb.float32)
+    ('error', nb.float32),
 ]
 
-#@nb.jitclass(spec2)
+# @nb.jitclass(spec2)
 class DecisionTreeStump:
 
     def __init__(self, extra_trees=False):
@@ -57,7 +57,6 @@ class DecisionTreeStump:
             for n in range(X.shape[0]):
                 n_feat_val = X[n, feat_i]
                 
-                # err_right = 1 - err_left
                 stump_left = X[X[:, feat_i] < n_feat_val]
                 stump_right = X[X[:, feat_i] >= n_feat_val]
                 
