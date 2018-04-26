@@ -4,7 +4,6 @@ import numpy as np
 spec1 = [
     ('n_classifiers', nb.uint16),
     ('extra_trees', nb.boolean),
-    ('classifiers', nb.Array)
 ]
 
 # @nb.jitclass(spec1)
@@ -48,6 +47,7 @@ spec2 = [
     ('feat_size', nb.float32),
     ('abs_error', nb.float32),
     ('total_error', nb.float32),
+    ('wrong_idx', nb.int64[:])
 ]
 
 @nb.jitclass(spec2)
@@ -61,9 +61,12 @@ class DecisionTreeStump:
         n_feat = X.shape[1]-1
 
         best_feat_i = 0
-        best_feat_size = 0.0  # smaller than feat_size (left side): zeros, on the right: ones
+        best_feat_size = 0.0  # smaller than feat_size (left side): -ones, on the right: ones
         furthest_from_half_error = 0.0      # absolute distance from 1/2 (close to 0 => bad, close to 1/2 => good!)
         total_error = 0.0 # needed for computing alpha
+
+        wrong_idx = [0] # which x_i's are classified wrong
+        wrong_idx.pop()
         
         # TODO use nb.prange
         # TODO (maybe): make algorithm more efficient
@@ -77,26 +80,32 @@ class DecisionTreeStump:
                 
                 # sum up all weights for misclassified samples
                 error = 0.0
+                temp_wrong_idx = [0]
+                temp_wrong_idx.pop()
+
                 for x_i in stump_left[:, 0]:
                     x_ii = int(x_i)
-                    if Y[x_ii] != 0:
+                    if Y[x_ii] != -1:
                         error += X_Weights[x_ii]
+                        temp_wrong_idx.append(x_ii)
                 
                 for x_i in stump_right[:, 0]:
                     x_ii = int(x_i)
                     if Y[x_ii] != 1:
                         error += X_Weights[x_ii]
+                        temp_wrong_idx.append(x_ii)
 
                 if abs(error - 1/2) > furthest_from_half_error:
                     furthest_from_half_error = abs(error - 1/2)
                     best_feat_i = feat_i
                     best_feat_size = n_feat_val
                     total_error = error
+                    wrong_idx = temp_wrong_idx
         
         self.feat_i = best_feat_i
         self.feat_size = best_feat_size
-        self.abs_error = furthest_from_half_error # TODO: remove
         self.total_error = total_error
+        self.wrong_idx = np.array(wrong_idx)
 
     def predict(self, X):
         pass
