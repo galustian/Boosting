@@ -6,14 +6,16 @@ spec1 = [
     ('extra_trees', nb.boolean),
 ]
 
-# @nb.jitclass(spec1)
+@nb.jitclass(spec1)
 class AdaBoostClassifier:
     
     def __init__(self, n_classifiers=50, extra_trees=False):
         self.n_classifiers = n_classifiers
         self.extra_trees = extra_trees
-        self.classifiers = []
-        self.classifier_alpha = []
+        self.classifiers = [DecisionTreeStump()]
+        self.classifier_alpha = [0.0]
+        self.classifier_alpha.pop()
+        self.classifiers.pop()
     
     # X must be a numpy array where each row is a datapoint
     def fit(self, X, Y):
@@ -21,8 +23,6 @@ class AdaBoostClassifier:
         X_Weights = np.array([1 / X.shape[0] for i in range(X.shape[0])])
 
         X = np.c_[X_IDs, X]
-
-        best_classifiers = []
 
         for i in range(n_classifiers):
             stump_classifier = DecisionTreeStump(extra_trees)
@@ -40,10 +40,14 @@ class AdaBoostClassifier:
             self.classifier_alpha.append(alpha)
             
             X_Weights = update_weights(X_Weights, stump_classifier)
-            
 
-    @staticmethod
-    def update_weights(X_Weights, classifier):
+
+    def predict(self, X):
+        pass
+
+    # ----------------------------------------- HELPERS -----------------------------------------
+
+    def update_weights(self, X_Weights, classifier):
         for x_i in range(len(X_Weights)):
             if x_i in classifier.wrong_idx:
                 X_Weights[x_i] = X_Weights[x_i] * (1/2) * (1 / classifier.total_error)
@@ -52,12 +56,9 @@ class AdaBoostClassifier:
         
         return X_Weights
 
-    @staticmethod
-    def compute_alpha(err):
+    def compute_alpha(self, err):
         return np.log((1 - err) / err) / 2
 
-    def predict(self, X):
-        pass
 
 spec2 = [
     ('extra_trees', nb.boolean),
@@ -126,7 +127,6 @@ class DecisionTreeStump:
         self.total_error = total_error
         self.wrong_idx = np.array(wrong_idx)
 
-    # X must be a numpy array with the features
     def predict_sample(self, x):
         if len(x.shape) != 1:
             raise TypeError('predict_sample takes one-dimensional numpy arrays only. Dim != 1')
