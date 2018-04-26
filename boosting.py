@@ -33,6 +33,8 @@ class AdaBoostClassifier:
             if abs(stump_classifier.total_error - 1/2) < 1e-3:
                 break
 
+            # TODO if error-rate of whole boosting classifier is 0: break
+
             alpha = self.compute_alpha(stump_classifier.total_error)
             self.classifiers.append(stump_classifier)
             self.classifier_alpha.append(alpha)
@@ -78,7 +80,7 @@ class DecisionTreeStump:
 
         best_feat_i = 0
         best_feat_size = 0.0  # smaller than feat_size (left side): -ones, on the right: ones
-        furthest_from_half_error = 0.0      # absolute distance from 1/2 (close to 0 => bad, close to 1/2 => good!)
+        furthest_from_half_error = 0.0  # absolute distance from 1/2 (close to 0 => bad, close to 1/2 => good!)
         total_error = 0.0 # needed for computing alpha
 
         wrong_idx = [0] # which x_i's are classified wrong
@@ -124,6 +126,27 @@ class DecisionTreeStump:
         self.total_error = total_error
         self.wrong_idx = np.array(wrong_idx)
 
+    # X must be a numpy array with the features
+    def predict_sample(self, x):
+        if len(x.shape) != 1:
+            raise TypeError('predict_sample takes one-dimensional numpy arrays only. Dim != 1')
+        
+        if x[self.feat_i] < self.feat_size:
+            return -1
+        return 1
+
     def predict(self, X):
-        pass
+        if len(X) == 1:
+            raise TypeError('predict takes two-dimensional numpy arrays only. Dim: 1')
+
+        Y_hat = [0]
+        Y_hat.pop()
+
+        for i in range(len(X)):
+            if X[i][self.feat_i] < self.feat_size:
+                Y_hat.append(-1)
+            else:
+                Y_hat.append(1)
+        
+        return Y_hat
     
