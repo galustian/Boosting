@@ -32,17 +32,30 @@ class AdaBoostClassifier:
             if abs(stump_classifier.total_error - 1/2) < 1e-3:
                 break
 
-            # TODO if predicted error-rate of whole boosting classifier is 0: break
-
             alpha = compute_alpha(stump_classifier.total_error)
             self.classifiers.append(stump_classifier)
             self.classifier_alpha.append(alpha)
             
             X_Weights = update_weights(X_Weights, stump_classifier)
 
+            # If error-rate of whole boosting classifier is 0: break
+            if np.array_equiv(Y, self.predict(X)):
+                break
+
 
     def predict(self, X):
-        pass
+        prediction_2D_array = []
+
+        for i, clf in enumerate(self.classifiers)
+            predictions = self.classifier_alpha[i] * clf.predict(X)
+            prediction_2D_array.append(predictions)
+        
+        prediction_2D_array = np.array(prediction_2D_array).T
+
+        assert prediction_2D_array.shape[0] == X.shape[0]
+        assert prediction_2D_array.shape[1] == self.n_classifiers
+
+        return prediction_2D_array.sum(axis=1)
 
 # ----------------------------------------- HELPERS -----------------------------------------
 
@@ -149,5 +162,5 @@ class DecisionTreeStump:
             else:
                 Y_hat.append(1)
         
-        return Y_hat
+        return np.array(Y_hat, dtype=np.int8)
     
