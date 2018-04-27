@@ -1,18 +1,11 @@
 import numba as nb
 import numpy as np
 
-#spec1 = [
-#    ('n_classifiers', nb.uint16),
-#    ('extra_trees', nb.boolean),
-#    ('classifier_alpha', nb.float32[:]),
-#    #('classifiers', nb.)
-#]
-# @nb.jitclass(spec1)
+
 class AdaBoostClassifier:
     
-    def __init__(self, n_classifiers=50, extra_trees=False):
+    def __init__(self, n_classifiers=50):
         self.n_classifiers = n_classifiers
-        self.extra_trees = extra_trees  # TODO
         self.classifier_alpha = []
         self.classifiers = []
     
@@ -24,7 +17,7 @@ class AdaBoostClassifier:
         X = np.c_[X_IDs, X]
 
         for i in range(self.n_classifiers):
-            stump_classifier = DecisionTreeStump(self.extra_trees)
+            stump_classifier = DecisionTreeStump()
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
             # if total_error of classifier is close to 0 or 1, it is stuck in an infinite loop
@@ -40,31 +33,16 @@ class AdaBoostClassifier:
             
             X_Weights = update_weights(X_Weights, stump_classifier)
 
-            # If error-rate of whole boosting classifier is 0: break
-            #print(Y)
-            #print(self.predict(X))
-            # if np.array_equiv(Y, self.predict(X)):
-            #    self.n_classifiers = i+1
-            #
-            #     break
-
-
     def predict(self, X):
         prediction_2D_array = []
 
         for i, clf in enumerate(self.classifiers):
             predictions = self.classifier_alpha[i] * clf.predict(X)
-            if i == 0:
-                #print("CAAA", self.classifier_alpha)
-                #print("alpha:", self.classifier_alpha[i], clf.predict(X))
-                pass
             prediction_2D_array.append(predictions)
         
         prediction_2D_array = np.array(prediction_2D_array).T
-
-        assert prediction_2D_array.shape[0] == X.shape[0]
-        assert prediction_2D_array.shape[1] == len(self.classifiers)
-
+        # assert prediction_2D_array.shape[0] == X.shape[0]
+        # assert prediction_2D_array.shape[1] == len(self.classifiers)
         return np.sign(prediction_2D_array.sum(axis=1)).astype(np.int8)
 
 # ----------------------------------------- HELPERS -----------------------------------------
@@ -86,7 +64,6 @@ def compute_alpha(err):
 
 
 spec2 = [
-    ('extra_trees', nb.boolean),
     ('feat_i', nb.uint32),
     ('feat_size', nb.float32),
     ('abs_error', nb.float32),
@@ -96,9 +73,8 @@ spec2 = [
 
 @nb.jitclass(spec2)
 class DecisionTreeStump:
-
-    def __init__(self, extra_trees=False):
-        self.extra_trees = extra_trees
+    def __init__(self):
+        pass
 
     # Compute the best classifier
     def fit(self, X, Y, X_Weights):

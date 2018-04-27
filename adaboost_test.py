@@ -12,15 +12,15 @@ def test_adaboost_classifier():
     ])
     Y = np.array([-1, -1, 1, 1, 1], dtype=np.int)
     
-    clf = AdaBoostClassifier(50, False)
+    clf = AdaBoostClassifier(50)
     clf.fit(X, Y)
-    print("Necessary classifiers until zero error:", clf.n_classifiers)
+    # must classify all with 1 classifier
     assert clf.n_classifiers == 1
 
 
 
 def test_decisiontree_stump_fit():
-    stump = DecisionTreeStump(extra_trees=False)
+    stump = DecisionTreeStump()
 
     X = np.array([
         [0, 7.2, 8, 45],
@@ -47,7 +47,7 @@ def test_decisiontree_stump_fit():
     ])
     Y = np.array([-1, -1, -1, 1, 1], dtype=np.int)
 
-    stump = DecisionTreeStump(extra_trees=False)
+    stump = DecisionTreeStump()
     stump.fit(X, Y, X_Weights)
 
     assert stump.feat_i == 2
@@ -66,7 +66,7 @@ def test_decisiontree_stump_predict():
     Y = np.array([-1, -1, -1, 1, 1], dtype=np.int)
     X_Weights = np.array([1 / X.shape[0] for i in range(X.shape[0])])
 
-    stump = DecisionTreeStump(extra_trees=False)
+    stump = DecisionTreeStump()
     stump.fit(X, Y, X_Weights)
     
     x_hat = np.array([24554, 2.1, 6, 1])
