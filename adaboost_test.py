@@ -1,9 +1,22 @@
 import numpy as np
-from boosting import AdaBoostClassifier, DecisionTreeStump
+from adaboost import AdaBoostClassifier, DecisionTreeStump
 
 
 def test_adaboost_classifier():
+    X = np.array([
+        [7.2, 8, 45],
+        [3.44, 7, 48],
+        [2.19, 6, 1],
+        [2.18, 6.1, 129],
+        [2.18, 5, 19],
+    ])
+    Y = np.array([-1, -1, 1, 1, 1], dtype=np.int)
+    
     clf = AdaBoostClassifier(50, False)
+    clf.fit(X, Y)
+    print("Necessary classifiers until zero error:", clf.n_classifiers)
+    assert clf.n_classifiers == 1
+
 
 
 def test_decisiontree_stump_fit():

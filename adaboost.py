@@ -12,7 +12,7 @@ class AdaBoostClassifier:
     
     def __init__(self, n_classifiers=50, extra_trees=False):
         self.n_classifiers = n_classifiers
-        self.extra_trees = extra_trees
+        self.extra_trees = extra_trees  # TODO
         self.classifier_alpha = []
         self.classifiers = []
     
@@ -23,43 +23,53 @@ class AdaBoostClassifier:
 
         X = np.c_[X_IDs, X]
 
-        for i in range(n_classifiers):
-            stump_classifier = DecisionTreeStump(extra_trees)
+        for i in range(self.n_classifiers):
+            stump_classifier = DecisionTreeStump(self.extra_trees)
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
-            # if total_error of classifier is close to 1/2, it is stuck in an infinite loop
-            # (alphas are 0 and weights don't update anymore)
-            if abs(stump_classifier.total_error - 1/2) < 1e-3:
-                break
-
-            alpha = compute_alpha(stump_classifier.total_error)
+            # if total_error of classifier is close to 0 or 1, it is stuck in an infinite loop
+            # If error-rate of whole boosting classifier is 0: break
+            # (alphas are 0 or infinite and weights don't update anymore)
             self.classifiers.append(stump_classifier)
+            if abs(stump_classifier.total_error - 1/2) - 1/2 < 1e-3 or np.array_equiv(Y, self.predict(X)):
+                self.n_classifiers = i+1
+                break
+            
+            alpha = compute_alpha(stump_classifier.total_error)
             self.classifier_alpha.append(alpha)
             
             X_Weights = update_weights(X_Weights, stump_classifier)
 
             # If error-rate of whole boosting classifier is 0: break
-            if np.array_equiv(Y, self.predict(X)):
-                break
+            #print(Y)
+            #print(self.predict(X))
+            # if np.array_equiv(Y, self.predict(X)):
+            #    self.n_classifiers = i+1
+            #
+            #     break
 
 
     def predict(self, X):
         prediction_2D_array = []
 
-        for i, clf in enumerate(self.classifiers)
+        for i, clf in enumerate(self.classifiers):
             predictions = self.classifier_alpha[i] * clf.predict(X)
+            if i == 0:
+                #print("CAAA", self.classifier_alpha)
+                #print("alpha:", self.classifier_alpha[i], clf.predict(X))
+                pass
             prediction_2D_array.append(predictions)
         
         prediction_2D_array = np.array(prediction_2D_array).T
 
         assert prediction_2D_array.shape[0] == X.shape[0]
-        assert prediction_2D_array.shape[1] == self.n_classifiers
+        assert prediction_2D_array.shape[1] == len(self.classifiers)
 
-        return prediction_2D_array.sum(axis=1)
+        return np.sign(prediction_2D_array.sum(axis=1)).astype(np.int8)
 
 # ----------------------------------------- HELPERS -----------------------------------------
 
-@nb.njit
+#@nb.njit
 def update_weights(X_Weights, classifier):
     for x_i in range(len(X_Weights)):
         if x_i in classifier.wrong_idx:
@@ -71,6 +81,7 @@ def update_weights(X_Weights, classifier):
 
 @nb.njit
 def compute_alpha(err):
+    print("ERROR", err)
     return np.log((1 - err) / err) / 2
 
 
