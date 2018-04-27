@@ -20,16 +20,21 @@ class AdaBoostClassifier:
             stump_classifier = DecisionTreeStump()
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
-            # if total_error of classifier is close to 0 or 1, it is stuck in an infinite loop
-            # If error-rate of whole boosting classifier is 0: break
+            # if total_error of stump_classifier is close to 0 or 1, it is stuck in an infinite loop
             # (alphas are 0 or infinite and weights don't update anymore)
             self.classifiers.append(stump_classifier)
-            if abs(stump_classifier.total_error - 1/2) - 1/2 < 1e-3 or np.array_equiv(Y, self.predict(X)):
+
+            if abs(abs(stump_classifier.total_error - 1/2) - 1/2) < 1e-3:
                 self.n_classifiers = i+1
                 break
             
             alpha = compute_alpha(stump_classifier.total_error)
             self.classifier_alpha.append(alpha)
+            
+            # If error-rate of whole boosting classifier is 0: break
+            if np.array_equal(Y, self.predict(X)):
+                self.n_classifiers = i+1
+                break
             
             X_Weights = update_weights(X_Weights, stump_classifier)
 
@@ -59,7 +64,6 @@ def update_weights(X_Weights, classifier):
 
 @nb.njit
 def compute_alpha(err):
-    print("ERROR", err)
     return np.log((1 - err) / err) / 2
 
 

@@ -12,11 +12,25 @@ def test_adaboost_classifier():
     ])
     Y = np.array([-1, -1, 1, 1, 1], dtype=np.int)
     
-    clf = AdaBoostClassifier(50)
+    clf = AdaBoostClassifier()
     clf.fit(X, Y)
-    # must classify all with 1 classifier
+    # must classify all correct with 1 classifier
     assert clf.n_classifiers == 1
 
+    X = np.array([
+        [1.2, 8, 45],
+        [3.44, 7, 48],
+        [2.19, 6, 1],
+        [2.20, 5, 129],
+        [1.35, 15, 19],
+    ])
+    Y = np.array([-1, -1, -1, 1, 1], dtype=np.int)
+
+    clf = AdaBoostClassifier(50)
+    clf.fit(X, Y)
+
+    assert clf.n_classifiers != 1
+    assert clf.n_classifiers < 6
 
 
 def test_decisiontree_stump_fit():
