@@ -1,2 +1,4 @@
+*.csv
 /.pytest_cache
 /__pycache__
+*.ipynb
