@@ -20,6 +20,8 @@ class AdaBoostClassifier:
             stump_classifier = DecisionTreeStump()
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
+            print("Round", i+1)
+
             # if total_error of stump_classifier is close to 0 or 1, it is stuck in an infinite loop
             # (alphas are 0 or infinite and weights don't update anymore)
             self.classifiers.append(stump_classifier)
@@ -27,7 +29,7 @@ class AdaBoostClassifier:
             alpha = compute_alpha(stump_classifier.total_error)
             self.classifier_alpha.append(alpha)
             
-            if abs(abs(stump_classifier.total_error - 1/2) - 1/2) < 1e-3:
+            if abs(abs(stump_classifier.total_error - 1/2) - 1/2) < 1e-6:
                 self.n_classifiers = i+1
                 break
             
@@ -74,7 +76,7 @@ def compute_alpha(err):
 spec2 = [
     ('feat_i', nb.uint32),
     ('feat_size', nb.float32),
-    ('abs_error', nb.float32),
+    ('STEPS', nb.uint16),
     ('total_error', nb.float32),
     ('wrong_idx', nb.int64[:])
 ]
@@ -82,7 +84,7 @@ spec2 = [
 @nb.jitclass(spec2)
 class DecisionTreeStump:
     def __init__(self):
-        pass
+        self.STEPS = 25
 
     # Compute the best classifier
     def fit(self, X, Y, X_Weights):
@@ -100,11 +102,16 @@ class DecisionTreeStump:
         # TODO (maybe): make algorithm more efficient
         for feat_i in range(1, n_feat):
             # Compute Error for each possible tree => choose best stump
-            for n in range(X.shape[0]):
-                n_feat_val = X[n, feat_i]
+            feat_min = X[:, feat_i].min()
+            feat_max = X[:, feat_i].max()
+
+            feat_steps = np.linspace(feat_min, feat_max, self.STEPS)
+
+            for step_i in range(len(feat_steps)):
+                feat_size = feat_steps[step_i]
                 
-                stump_left = X[X[:, feat_i] < n_feat_val]
-                stump_right = X[X[:, feat_i] >= n_feat_val]
+                stump_left = X[X[:, feat_i] < feat_size]
+                stump_right = X[X[:, feat_i] >= feat_size]
                 
                 # Sum up all weights for misclassified samples
                 error = 0.0
@@ -129,7 +136,7 @@ class DecisionTreeStump:
                     wrong_idx = temp_wrong_idx
                     
                     best_feat_i = feat_i
-                    best_feat_size = n_feat_val
+                    best_feat_size = feat_size
         
         self.feat_i = best_feat_i
         self.feat_size = best_feat_size
