@@ -20,8 +20,6 @@ class AdaBoostClassifier:
             stump_classifier = DecisionTreeStump()
             stump_classifier.fit(X, Y, X_Weights) # compute best decision-tree stump
 
-            print("Round", i+1)
-
             # if total_error of stump_classifier is close to 0 or 1, it is stuck in an infinite loop
             # (alphas are 0 or infinite and weights don't update anymore)
             self.classifiers.append(stump_classifier)
