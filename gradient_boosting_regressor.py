@@ -111,6 +111,7 @@ class DecisionTreeRegressor:
                     best_feat_i = feat_i
                     best_feat_val = feat_step
         
+        # Split X and Y based on best splitpoint
         X_Y = np.c_[X_region, Y_region]
         
         best_XY_left = X_Y[X_Y[:, best_feat_i] < best_feat_val]
