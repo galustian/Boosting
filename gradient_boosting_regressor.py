@@ -27,7 +27,7 @@ spec = [
     # ('structure')
 ]
 
-@nb.jitclass(spec)
+# @nb.jitclass(spec)
 class DecisionTreeRegressor:
 
     def __init__(self, tree_depth=3, min_datapoints=6):
@@ -93,7 +93,7 @@ class DecisionTreeRegressor:
 
         best_err = 9999999.9
         
-        for feat_i in range(1, X.shape[1]-1):
+        for feat_i in range(1, X_region.shape[1]-1):
             feat_min = X_region[:, feat_i].min()
             feat_max = X_region[:, feat_i].max()
             feat_steps = np.linspace(feat_min, feat_max, self.STEPS)
@@ -104,7 +104,7 @@ class DecisionTreeRegressor:
                 XY_left = X_Y[X_region[:, feat_i] < feat_step]
                 XY_right = X_Y[X_region[:, feat_i] >= feat_step]
 
-                region_err = get_region_MSE(XY_left[:, -1]) + get_region_MSE(XY_right[:, -1])
+                region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
 
                 if region_err < best_err:
                     best_err = region_err
@@ -113,8 +113,8 @@ class DecisionTreeRegressor:
         
         X_Y = np.c_[X_region, Y_region]
         
-        best_XY_left = X_Y[X_Y[best_feat_i < best_feat_val]]
-        best_XY_right = X_Y[X_Y[best_feat_i >= best_feat_val]]
+        best_XY_left = X_Y[X_Y[:, best_feat_i] < best_feat_val]
+        best_XY_right = X_Y[X_Y[:, best_feat_i] >= best_feat_val]
 
         X_left, Y_left = best_XY_left[:, :-1], best_XY_left[:, -1]
         X_right, Y_right = best_XY_right[:, :-1], best_XY_right[:, -1]
@@ -123,8 +123,9 @@ class DecisionTreeRegressor:
                 'X_right': X_right, 'Y_right': Y_right, 
                 'feat_i': best_feat_i, 'feat_val': best_feat_val, 'best_err': best_err}
 
-    def get_region_MSE(self, Y_region):
-        Y_mean = Y_region[:, -1].mean()
+    def get_region_MSE(self, Y):
+        if len(Y) == 0: return 0
+        Y_mean = Y.mean()
         return np.average(np.square(Y - Y_mean))
 
 
