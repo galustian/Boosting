@@ -40,6 +40,25 @@ class DecisionTreeRegressor:
         # If maximum Depth reached: construct right- and left endnodes
         if depth == self.DEPTH:
             print('MAX DEPTH REACHED')
+            # If left or right side empty, both sides have equal result
+            if len(Y_left) == 0 or len(Y_right) == 0:
+                Y_mean = 0
+                
+                if len(Y_left) == 0:
+                    Y_mean = Y_right.mean()
+                else:
+                    Y_mean = Y_left.mean()
+            
+                structure['left_next'] = {}
+                structure['left_next']['END_NODE'] = True
+                structure['left_next']['prediction'] = Y_mean
+            
+                structure['right_next'] = {}
+                structure['right_next']['END_NODE'] = True
+                structure['right_next']['prediction'] = Y_mean
+                
+                return
+            
             structure['left_next'] = {}
             structure['left_next']['END_NODE'] = True
             structure['left_next']['prediction'] = Y_left.mean()
@@ -63,12 +82,19 @@ class DecisionTreeRegressor:
             print('MIN_DATAPOINTS in Left')
             structure['left_next'] = {}
             structure['left_next']['END_NODE'] = True
-            structure['left_next']['prediction'] = Y_left.mean()
+            if len(X_left) != 0:
+                structure['left_next']['prediction'] = Y_left.mean()
+            else:
+                structure['left_next']['prediction'] = Y_right.mean()
+        
         if len(X_right) < self.MIN_DATAPOINTS:
             print('MIN_DATAPOINTS in Right')
             structure['right_next'] = {}
             structure['right_next']['END_NODE'] = True
-            structure['right_next']['prediction'] = Y_right.mean()
+            if len(X_right) != 0:
+                structure['right_next']['prediction'] = Y_right.mean()
+            else:
+                structure['right_next']['prediction'] = Y_left.mean()
 
         if 'left_next' not in structure:
             structure['left_next'] = {}
@@ -88,7 +114,6 @@ class DecisionTreeRegressor:
             feat_min = X_region[:, feat_i].min()
             feat_max = X_region[:, feat_i].max()
             feat_steps = np.linspace(feat_min, feat_max, self.STEPS)
-            #print("feat_steps", feat_steps)
 
             for feat_step in feat_steps:
                 X_Y = np.c_[X_region, Y_region]
@@ -97,9 +122,9 @@ class DecisionTreeRegressor:
                 XY_right = X_Y[X_region[:, feat_i] >= feat_step]
 
                 region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
-                print('best_feat, val', best_feat_i, best_feat_val)
-                print('best_err:', best_err)
-                print('regi_err:', region_err)
+                #print('best_feat, val', best_feat_i, best_feat_val)
+                #print('best_err:', best_err)
+                #print('regi_err:', region_err)
 
                 if region_err < best_err or best_err == -1:
                     best_err = region_err
