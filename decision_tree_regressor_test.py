@@ -66,4 +66,4 @@ def test_predict():
 
     reg.fit(X, Y)
 
-    assert reg.predict(np.array([18, 165, 4])) == Y[6:].mean() # -3
+    assert reg.predict(np.array([18, 165, 4])) == Y[6:].mean()
