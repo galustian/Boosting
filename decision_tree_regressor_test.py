@@ -34,15 +34,15 @@ from decision_tree_regressor import DecisionTreeRegressor
     assert 6.8 <= split['feat_val'] <= 6.99
     '''
 def test_predict():
-    reg = DecisionTreeRegressor(tree_depth=15)
+    reg = DecisionTreeRegressor(tree_depth=3)
     
-    df = pd.read_csv('boston.csv').sample(frac=1, random_state=4)
+    df = pd.read_csv('boston.csv').sample(frac=1, random_state=1457)
     df = df.iloc[:, 1:]
     #df['Price'] = df.iloc[:, -1] - df.iloc[:, -1].mean()
     #df['Price'] = df.iloc[:, -1] / df.iloc[:, -1].std()
 
-    X_train, Y_train = df.iloc[:int(len(df) / 1.6), :-1].as_matrix(), df.iloc[:int(len(df) / 1.6), -1].as_matrix()
-    X_test, Y_test = df.iloc[int(len(df) / 1.6):, :-1].as_matrix(), df.iloc[int(len(df) / 1.6):, -1].as_matrix()
+    X_train, Y_train = df.iloc[:int(len(df) / 1.2), :-1].as_matrix(), df.iloc[:int(len(df) / 1.2), -1].as_matrix()
+    X_test, Y_test = df.iloc[int(len(df) / 1.2):, :-1].as_matrix(), df.iloc[int(len(df) / 1.2):, -1].as_matrix()
 
     reg.fit(X_train, Y_train)
     Y_hat = reg.predict(X_test)
@@ -52,7 +52,7 @@ def test_predict():
     
     for i in range(len(Y_test)):
         print(Y_test[i], "pred:", Y_hat[i])
-    print(reg.structure)
+    #print(reg.structure)
 
     ''' reg = DecisionTreeRegressor(tree_depth=1, min_datapoints=3)
     X = np.array([
