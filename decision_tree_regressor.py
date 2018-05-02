@@ -1,17 +1,9 @@
 import numpy as np
 import numba as nb
 
-spec = [
-    ('STEPS', nb.uint32),
-    ('DEPTH', nb.uint8),
-    ('MIN_DATAPOINTS', nb.uint16),
-    # ('structure')
-]
-
-# @nb.jitclass(spec)
 class DecisionTreeRegressor:
 
-    def __init__(self, tree_depth=3, min_datapoints=15, min_leaf_samples=15):
+    def __init__(self, tree_depth=3, min_datapoints=2, min_leaf_samples=1):
         #self.STEPS = 200
         self.DEPTH = tree_depth
         self.MIN_DATAPOINTS = min_datapoints
@@ -49,7 +41,6 @@ class DecisionTreeRegressor:
         #print("Depth:", depth)
         # If maximum Depth reached: construct right- and left endnodes
         if depth == self.DEPTH:
-            print('MAX DEPTH REACHED')
             structure['left_next'] = {}
             structure['left_next']['END_NODE'] = True
             structure['left_next']['prediction'] = Y_left.mean()
@@ -60,13 +51,11 @@ class DecisionTreeRegressor:
 
         # If left of right less than MIN_DATAPOINTS, construct respective endnode
         if len(X_left) < self.MIN_DATAPOINTS:
-            print('MIN_DATAPOINTS in Left')
             structure['left_next'] = {}
             structure['left_next']['END_NODE'] = True
             structure['left_next']['prediction'] = Y_left.mean()
         
         if len(X_right) < self.MIN_DATAPOINTS:
-            print('MIN_DATAPOINTS in Right')
             structure['right_next'] = {}
             structure['right_next']['END_NODE'] = True
             structure['right_next']['prediction'] = Y_right.mean()
@@ -76,9 +65,7 @@ class DecisionTreeRegressor:
         if 'right_next' not in structure:
             structure['right_next'] = {}
         
-        print('LEFT:', depth+1)
         self.recurse_split(X_left, Y_left, structure=structure['left_next'], depth=depth+1)
-        print('RIGHT:', depth+1)
         self.recurse_split(X_right, Y_right, structure=structure['right_next'], depth=depth+1)
         
     #@nb.njit
@@ -103,13 +90,7 @@ class DecisionTreeRegressor:
                     continue
 
                 #region_err = np.var(XY_left[:, -1]) + np.var(XY_right[:, -1])
-                region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
-            
-                #print('best_feat, val:', best_feat_i, best_feat_val)
-                #print('best_err:', best_err)
-                #print('curr_feat, val:', feat_i, feat_step)
-                #print('curr_err:', region_err)
-                #print('\n')
+                region_err = self.sum_of_squared_err(XY_left[:, -1]) + self.sum_of_squared_err(XY_right[:, -1])
 
                 if region_err < best_err or best_err == -1:
                     best_err = region_err
@@ -129,7 +110,7 @@ class DecisionTreeRegressor:
                 'X_right': X_right, 'Y_right': Y_right, 
                 'feat_i': best_feat_i, 'feat_val': best_feat_val, 'best_err': best_err}
 
-    def get_region_MSE(self, Y):
+    def sum_of_squared_err(self, Y):
         return np.sum(np.square(Y - Y.mean()))
 
     def predict(self, X):
