@@ -11,10 +11,11 @@ spec = [
 # @nb.jitclass(spec)
 class DecisionTreeRegressor:
 
-    def __init__(self, tree_depth=3, min_datapoints=6):
-        self.STEPS = 20
+    def __init__(self, tree_depth=3, min_datapoints=15, min_leaf_samples=15):
+        self.STEPS = 1520
         self.DEPTH = tree_depth
         self.MIN_DATAPOINTS = min_datapoints
+        self.MIN_LEAF_SAMPLES = min_leaf_samples
         self.structure = {}
 
     def fit(self, X, Y):
@@ -30,72 +31,46 @@ class DecisionTreeRegressor:
 
         X_left, Y_left = split['X_left'], split['Y_left']
         X_right, Y_right = split['X_right'], split['Y_right']
-        
         # TODO maybe variable importance?
         # best_err = split['best_err']
-
         structure['feat_i'] = split['feat_i']
         structure['feat_val'] = split['feat_val']
+        
+        # -1 if best_split not found (because of self.MIN_LEAF_SAMPLES)
+        if split['best_err'] == -1:
+            structure['left_next'] = {}
+            structure['left_next']['END_NODE'] = True
+            structure['left_next']['prediction'] = Y_region.mean()
+            structure['right_next'] = {}
+            structure['right_next']['END_NODE'] = True
+            structure['right_next']['prediction'] = Y_region.mean()
+            return
 
+        print("Depth:", depth)
         # If maximum Depth reached: construct right- and left endnodes
         if depth == self.DEPTH:
             print('MAX DEPTH REACHED')
-            # If left or right side empty, both sides have equal result
-            if len(Y_left) == 0 or len(Y_right) == 0:
-                Y_mean = 0
-                
-                if len(Y_left) == 0:
-                    Y_mean = Y_right.mean()
-                else:
-                    Y_mean = Y_left.mean()
-            
-                structure['left_next'] = {}
-                structure['left_next']['END_NODE'] = True
-                structure['left_next']['prediction'] = Y_mean
-            
-                structure['right_next'] = {}
-                structure['right_next']['END_NODE'] = True
-                structure['right_next']['prediction'] = Y_mean
-                
-                return
-            
             structure['left_next'] = {}
             structure['left_next']['END_NODE'] = True
             structure['left_next']['prediction'] = Y_left.mean()
-            
             structure['right_next'] = {}
             structure['right_next']['END_NODE'] = True
             structure['right_next']['prediction'] = Y_right.mean()
-    
             return
 
-        # If left of right less than min. datapoints, construct respective endnode
-        print("\n")
-        print("Depth:", depth)
-        '''print("Left shape:")
-        print(X_left.shape)
-        print(Y_left.shape)
-        print("Right shape:")
-        print(X_right.shape)
-        print(Y_right.shape)'''
+        # If left of right less than MIN_DATAPOINTS, construct respective endnode
         if len(X_left) < self.MIN_DATAPOINTS:
             print('MIN_DATAPOINTS in Left')
             structure['left_next'] = {}
             structure['left_next']['END_NODE'] = True
-            if len(X_left) != 0:
-                structure['left_next']['prediction'] = Y_left.mean()
-            else:
-                structure['left_next']['prediction'] = Y_right.mean()
+            structure['left_next']['prediction'] = Y_left.mean()
         
         if len(X_right) < self.MIN_DATAPOINTS:
             print('MIN_DATAPOINTS in Right')
             structure['right_next'] = {}
             structure['right_next']['END_NODE'] = True
-            if len(X_right) != 0:
-                structure['right_next']['prediction'] = Y_right.mean()
-            else:
-                structure['right_next']['prediction'] = Y_left.mean()
-
+            structure['right_next']['prediction'] = Y_right.mean()
+        
         if 'left_next' not in structure:
             structure['left_next'] = {}
         if 'right_next' not in structure:
@@ -104,22 +79,27 @@ class DecisionTreeRegressor:
         self.recurse_split(X_left, Y_left, structure=structure['left_next'], depth=depth+1)
         self.recurse_split(X_right, Y_right, structure=structure['right_next'], depth=depth+1)
         
-
+    #@nb.njit
     def get_best_X_split(self, X_region, Y_region):
-        best_feat_i = 0
+        best_feat_i = 1
         best_feat_val = 0.0
-
         best_err = -1
-        for feat_i in range(1, X_region.shape[1]-1):
+
+        for feat_i in range(1, X_region.shape[1]):
             feat_min = X_region[:, feat_i].min()
             feat_max = X_region[:, feat_i].max()
             feat_steps = np.linspace(feat_min, feat_max, self.STEPS)
 
-            for feat_step in feat_steps:
+            for x_i in range(len(X_region)):
+                feat_step = X_region[x_i, feat_i]
+                
                 X_Y = np.c_[X_region, Y_region]
                 
                 XY_left = X_Y[X_region[:, feat_i] < feat_step]
                 XY_right = X_Y[X_region[:, feat_i] >= feat_step]
+
+                if len(XY_left) < self.MIN_LEAF_SAMPLES or len(XY_right) < self.MIN_LEAF_SAMPLES:
+                    continue
 
                 region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
                 #print('best_feat, val', best_feat_i, best_feat_val)
@@ -130,7 +110,7 @@ class DecisionTreeRegressor:
                     best_err = region_err
                     best_feat_i = feat_i
                     best_feat_val = feat_step
-        
+   
         # Split X and Y based on best splitpoint
         X_Y = np.c_[X_region, Y_region]
         
@@ -145,9 +125,7 @@ class DecisionTreeRegressor:
                 'feat_i': best_feat_i, 'feat_val': best_feat_val, 'best_err': best_err}
 
     def get_region_MSE(self, Y):
-        if len(Y) == 0: return 0
-        Y_mean = Y.mean()
-        return np.average(np.square(Y - Y_mean))
+        return np.average(np.square(Y - Y.mean()))
 
     def predict(self, X):
         Y = []
