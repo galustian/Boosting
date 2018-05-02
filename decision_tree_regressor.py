@@ -102,8 +102,8 @@ class DecisionTreeRegressor:
                 if len(XY_left) < self.MIN_LEAF_SAMPLES or len(XY_right) < self.MIN_LEAF_SAMPLES:
                     continue
 
-                region_err = np.var(XY_left[:, -1]) + np.var(XY_right[:, -1])
-                #region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
+                #region_err = np.var(XY_left[:, -1]) + np.var(XY_right[:, -1])
+                region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
             
                 #print('best_feat, val:', best_feat_i, best_feat_val)
                 #print('best_err:', best_err)
@@ -130,7 +130,7 @@ class DecisionTreeRegressor:
                 'feat_i': best_feat_i, 'feat_val': best_feat_val, 'best_err': best_err}
 
     def get_region_MSE(self, Y):
-        return np.average(np.abs(Y - Y.mean()))
+        return np.sum(np.square(Y - Y.mean()))
 
     def predict(self, X):
         Y = []
