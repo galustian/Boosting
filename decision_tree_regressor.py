@@ -12,7 +12,7 @@ spec = [
 class DecisionTreeRegressor:
 
     def __init__(self, tree_depth=3, min_datapoints=15, min_leaf_samples=15):
-        self.STEPS = 1520
+        #self.STEPS = 200
         self.DEPTH = tree_depth
         self.MIN_DATAPOINTS = min_datapoints
         self.MIN_LEAF_SAMPLES = min_leaf_samples
@@ -46,7 +46,7 @@ class DecisionTreeRegressor:
             structure['right_next']['prediction'] = Y_region.mean()
             return
 
-        print("Depth:", depth)
+        #print("Depth:", depth)
         # If maximum Depth reached: construct right- and left endnodes
         if depth == self.DEPTH:
             print('MAX DEPTH REACHED')
@@ -76,7 +76,9 @@ class DecisionTreeRegressor:
         if 'right_next' not in structure:
             structure['right_next'] = {}
         
+        print('LEFT:', depth+1)
         self.recurse_split(X_left, Y_left, structure=structure['left_next'], depth=depth+1)
+        print('RIGHT:', depth+1)
         self.recurse_split(X_right, Y_right, structure=structure['right_next'], depth=depth+1)
         
     #@nb.njit
@@ -86,14 +88,13 @@ class DecisionTreeRegressor:
         best_err = -1
 
         for feat_i in range(1, X_region.shape[1]):
-            feat_min = X_region[:, feat_i].min()
-            feat_max = X_region[:, feat_i].max()
-            feat_steps = np.linspace(feat_min, feat_max, self.STEPS)
-
+            #feat_min = X_region[:, feat_i].min()
+            #feat_max = X_region[:, feat_i].max()
+            #feat_steps = np.linspace(feat_min, feat_max, self.STEPS)
+            X_Y = np.c_[X_region, Y_region]
+            #for feat_step in feat_steps:
             for x_i in range(len(X_region)):
                 feat_step = X_region[x_i, feat_i]
-                
-                X_Y = np.c_[X_region, Y_region]
                 
                 XY_left = X_Y[X_region[:, feat_i] < feat_step]
                 XY_right = X_Y[X_region[:, feat_i] >= feat_step]
@@ -101,10 +102,14 @@ class DecisionTreeRegressor:
                 if len(XY_left) < self.MIN_LEAF_SAMPLES or len(XY_right) < self.MIN_LEAF_SAMPLES:
                     continue
 
-                region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
-                #print('best_feat, val', best_feat_i, best_feat_val)
+                region_err = np.var(XY_left[:, -1]) + np.var(XY_right[:, -1])
+                #region_err = self.get_region_MSE(XY_left[:, -1]) + self.get_region_MSE(XY_right[:, -1])
+            
+                #print('best_feat, val:', best_feat_i, best_feat_val)
                 #print('best_err:', best_err)
-                #print('regi_err:', region_err)
+                #print('curr_feat, val:', feat_i, feat_step)
+                #print('curr_err:', region_err)
+                #print('\n')
 
                 if region_err < best_err or best_err == -1:
                     best_err = region_err
@@ -125,7 +130,7 @@ class DecisionTreeRegressor:
                 'feat_i': best_feat_i, 'feat_val': best_feat_val, 'best_err': best_err}
 
     def get_region_MSE(self, Y):
-        return np.average(np.square(Y - Y.mean()))
+        return np.average(np.abs(Y - Y.mean()))
 
     def predict(self, X):
         Y = []
