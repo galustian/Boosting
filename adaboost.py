@@ -67,7 +67,9 @@ def update_weights(X_Weights, classifier):
 @nb.njit
 def compute_alpha(err):
     if err == 1.0:
-        return -999
+        return -7
+    if err == 0.0:
+        return 7
     return np.log((1 - err) / err) / 2
 
 
